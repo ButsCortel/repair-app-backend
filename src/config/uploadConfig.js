@@ -6,6 +6,7 @@ module.exports = {
     limits: {
         fileSize: 10 * 1024 * 1024
     },
+    preservePath: true,
     fileFilter: function (req, file, callback) {
         var ext = path.extname(file.originalname).toLowerCase();
         if (ext !== '.png' && ext !== '.jpg' && ext !== '.gif' && ext !== '.jpeg') {
@@ -14,4 +15,6 @@ module.exports = {
         req.filename = `${Date.now()}-${file.originalname}`
         callback(null, true)
     },
+
+
 }

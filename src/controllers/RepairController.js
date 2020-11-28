@@ -3,6 +3,7 @@ const Repair = require("../models/Repairs");
 
 module.exports = {
     async createRepair(req, res, next) {
+        console.log(req);
         const {
             customer,
             device,

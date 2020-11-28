@@ -22,7 +22,11 @@ module.exports = {
             const bucket = storage.bucket(process.env.BUCKET_NAME);
             const file = bucket.file(req.filename);
 
-            const stream = file.createWriteStream()
+            const stream = file.createWriteStream({
+                metadata: {
+                    contentType: req.file.mimetype,
+                },
+            });
             stream.on("finish", () => {
                 return res.status(200).json({
                     repair: req.repair,
