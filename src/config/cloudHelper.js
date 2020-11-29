@@ -1,13 +1,14 @@
 const {
     Storage
 } = require("@google-cloud/storage");
+const path = require("path")
 
 
 
 
 module.exports = {
     async upload(req, res) {
-        if (!req.file) return res.status(400).json({
+        if (!req.files) return res.status(400).json({
             message: "Missing Image!"
         });
         try {
@@ -19,22 +20,40 @@ module.exports = {
                 }
             });
 
-            const bucket = storage.bucket(process.env.BUCKET_NAME);
-            const file = bucket.file(req.filename);
-
-            const stream = file.createWriteStream({
-                metadata: {
-                    contentType: req.file.mimetype,
-                },
-            });
-            stream.on("finish", () => {
-                return res.status(200).json({
-                    repair: req.repair,
-                    message: "Upload successful"
+            const filename = req.files.image.path;
+            const options = {
+                destination: req.filename
+            }
+            await storage.bucket(process.env.BUCKET_NAME).upload(filename, options, (err, file, cb) => {
+                if (err) return res.status(409).json({
+                    message: "Error uploading!"
                 })
+            });
 
+            return res.status(200).json({
+                repair: req.repair,
+                message: "Upload successful"
             })
-            stream.end(req.file.buffer);
+
+
+
+            // const bucket = storage.bucket(process.env.BUCKET_NAME);
+            // const file = bucket.file(req.filename);
+
+            // const stream = file.createWriteStream({
+            //     metadata: {
+            //         contentType: req.file.mimetype,
+            //     },
+            // });
+            // stream.on("error", () => (new Error('Only images are allowed')));
+            // stream.on("finish", () => {
+            //     return res.status(200).json({
+            //         repair: req.repair,
+            //         message: "Upload successful"
+            //     })
+
+            // })
+            // stream.end(req.file.buffer);
         } catch (error) {
             console.log(error);
             res.sendStatus(500);

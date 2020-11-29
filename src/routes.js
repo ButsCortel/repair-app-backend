@@ -1,16 +1,18 @@
 const express = require("express");
 const Multer = require("multer");
 
+
 const repairController = require("./controllers/RepairController");
 const userController = require("./controllers/UserController");
 const loginController = require("./controllers/LoginController");
 
 
+
 //Config
 const verify = require("./config/verify")
-const uploadConfig = require("./config/uploadConfig");
 const cloudHelper = require("./config/cloudHelper");
-const multer = Multer(uploadConfig);
+const formidable = require("./config/formHelper")
+
 
 
 const routes = express.Router();
@@ -22,7 +24,7 @@ routes.get("/status", (req, res) => {
 })
 
 // Request Repair
-routes.post("/requests/create", verify, multer.single("image"), repairController.createRepair, cloudHelper.upload)
+routes.post("/requests/create", verify, formidable, repairController.createRepair, cloudHelper.upload)
 // Delete Repair
 routes.delete("/requests/delete/:repId?", verify, repairController.deleteRepair, cloudHelper.deleteImage);
 // Get all Repairs

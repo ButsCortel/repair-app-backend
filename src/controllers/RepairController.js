@@ -3,14 +3,13 @@ const Repair = require("../models/Repairs");
 
 module.exports = {
     async createRepair(req, res, next) {
-        console.log(req);
         const {
             customer,
             device,
             issue,
             status,
             price
-        } = req.body;
+        } = req.fields;
         const {
             _id
         } = req.user;
@@ -76,7 +75,7 @@ module.exports = {
             await Repair.findOneAndDelete({
                 _id: repId
             }, async (err, request) => {
-                console.log(request)
+
                 if (err || !request) return res.status(400).json({
                     message: "Request does not exist!"
                 })
