@@ -1,8 +1,6 @@
 const {
     Storage
 } = require("@google-cloud/storage");
-const path = require("path")
-
 
 
 
@@ -36,7 +34,7 @@ module.exports = {
             })
 
 
-
+            //Very slow upload!
             // const bucket = storage.bucket(process.env.BUCKET_NAME);
             // const file = bucket.file(req.filename);
 
