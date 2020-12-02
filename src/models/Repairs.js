@@ -2,49 +2,53 @@ const mongoose = require("mongoose");
 require("mongoose-currency").loadType(mongoose);
 const currency = mongoose.Types.Currency;
 
-
-const RepairSchema = new mongoose.Schema({
+const RepairSchema = new mongoose.Schema(
+  {
     dateCreated: {
-        type: Date,
-        default: Date.now,
+      type: Date,
+    },
+    lastUpdate: {
+      type: Date,
     },
     user: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
-        required: true,
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
     },
     customer: {
-        type: String,
-        required: true,
+      type: String,
+      required: true,
     },
     device: {
-        type: String,
-        required: true,
+      type: String,
+      required: true,
     },
     issue: {
-        type: String,
-        required: true,
+      type: String,
+      required: true,
     },
     price: {
-        type: currency,
-        default: "0",
+      type: currency,
+      default: "0",
     },
     status: {
-        type: String,
-        enum: ["INCOMING", "ONGOING", "ON HOLD", "OUTGOING"],
-        default: "INCOMING",
+      type: String,
+      enum: ["INCOMING", "ONGOING", "ON HOLD", "OUTGOING", "DONE"],
+      default: "INCOMING",
     },
     image: {
-        type: String,
-    }
-}, {
+      type: String,
+    },
+  },
+  {
     toJSON: {
-        virtuals: true
-    }
-});
+      virtuals: true,
+    },
+  }
+);
 
 RepairSchema.virtual("image_url").get(function () {
-    return process.env.BUCKET_URL + this.image + "?authuser=1"
-})
+  return process.env.BUCKET_URL + this.image + "?authuser=1";
+});
 
 module.exports = mongoose.model("Repair", RepairSchema);
