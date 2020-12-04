@@ -14,7 +14,8 @@ const verify = async (req, res, next) => {
       return res.status(401).json({
         message: "Unauthorized!",
       });
-    req.user = verified;
+    req.user = verified.user;
+
     next();
   } catch (error) {
     return res.status(401).json({

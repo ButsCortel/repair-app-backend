@@ -16,7 +16,8 @@ const RepairSchema = new mongoose.Schema(
       required: true,
     },
     customer: {
-      type: String,
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
       required: true,
     },
     device: {
@@ -27,13 +28,24 @@ const RepairSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    expedite: {
+      type: Boolean,
+      default: false,
+    },
     price: {
       type: currency,
       default: "0",
     },
     status: {
       type: String,
-      enum: ["INCOMING", "ONGOING", "ON HOLD", "OUTGOING", "DONE"],
+      enum: [
+        "INCOMING",
+        "RECEIVED",
+        "ONGOING",
+        "ON HOLD",
+        "OUTGOING",
+        "COMPLETED",
+      ],
       default: "INCOMING",
     },
     image: {

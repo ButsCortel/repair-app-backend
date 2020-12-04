@@ -2,16 +2,15 @@ const Repair = require("../models/Repairs");
 
 module.exports = {
   async createRepair(req, res, next) {
-    const { customer, device, issue, status, price } = req.fields;
+    const { device, issue, expedite } = req.fields;
     const { _id } = req.user;
     try {
       const repair = await Repair.create({
         user: _id,
-        customer,
+        customer: _id,
         device,
         issue,
-        status,
-        price,
+        expedite: expedite === "Yes" ? true : false,
         image: req.filename,
         dateCreated: new Date(),
         lastUpdate: new Date(),
@@ -37,6 +36,7 @@ module.exports = {
           $set: {
             status,
             lastUpdate: new Date(),
+            user: req.user_id,
           },
         },
         {
