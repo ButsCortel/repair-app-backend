@@ -95,7 +95,7 @@ module.exports = {
         return res.status(400).json({
           message: "Request does not Exist!",
         });
-      await repair.populate("user").execPopulate();
+      await repair.populate("user").populate("customer").execPopulate();
       return res.json(repair);
     } catch (error) {
       console.log(error);
@@ -116,7 +116,8 @@ module.exports = {
       const result = await Repair.find(query);
       if (result.length) {
         const promises = result.map(
-          async (repair) => await repair.populate("user").execPopulate()
+          async (repair) =>
+            await repair.populate("user").populate("customer").execPopulate()
         );
         const repairs = await Promise.all(promises);
 
