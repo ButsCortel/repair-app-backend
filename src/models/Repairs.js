@@ -36,6 +36,10 @@ const RepairSchema = new mongoose.Schema(
       type: currency,
       default: "0",
     },
+    note: {
+      type: String,
+      default: "N/A",
+    },
     status: {
       type: String,
       enum: [
@@ -45,6 +49,7 @@ const RepairSchema = new mongoose.Schema(
         "ON HOLD",
         "OUTGOING",
         "COMPLETED",
+        "CANCELLED",
       ],
       default: "INCOMING",
     },

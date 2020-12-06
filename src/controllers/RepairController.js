@@ -25,7 +25,7 @@ module.exports = {
     }
   },
   async updateStatus(req, res) {
-    const { status } = req.body;
+    const { status, note } = req.body;
     const { repairId } = req.params;
     try {
       Repair.findOneAndUpdate(
@@ -35,8 +35,9 @@ module.exports = {
         {
           $set: {
             status,
+            note,
             lastUpdate: new Date(),
-            user: req.user_id,
+            user: req.user._id,
           },
         },
         {
@@ -52,7 +53,7 @@ module.exports = {
             return res.status(400).json({
               message: "Request does not exist!",
             });
-          res.json(doc);
+          res.sendStatus(200);
         }
       );
     } catch (error) {
