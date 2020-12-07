@@ -105,6 +105,30 @@ module.exports = {
       });
     }
   },
+  async getRepairByUser(req, res) {
+    try {
+      const result = await Repair.find({ customer: req.user._id });
+      if (result.length) {
+        const promises = result.map(
+          async (repair) =>
+            await repair.populate("user").populate("customer").execPopulate()
+        );
+        const repairs = await Promise.all(promises);
+
+        return res.json({
+          repairs,
+        });
+      }
+      return res.status(400).json({
+        message: "There are no available requests yet.",
+      });
+    } catch (error) {
+      console.log(error);
+      return res.status(400).json({
+        message: "There are no available requests yet.",
+      });
+    }
+  },
   async getRepairs(req, res) {
     const { status } = req.params;
     const query =

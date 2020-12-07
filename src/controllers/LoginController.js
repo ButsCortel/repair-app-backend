@@ -24,6 +24,7 @@ module.exports = {
           email: user.email,
           firstName: user.firstName,
           lastName: user.lastName,
+          type: user.type,
         };
         return jwt.sign(
           { user: userResponse },
