@@ -65,7 +65,7 @@ const RepairSchema = new mongoose.Schema(
 );
 
 RepairSchema.virtual("image_url").get(function () {
-  return process.env.BUCKET_URL + this.image + "?authuser=1";
+  return process.env.BUCKET_URL + this.image;
 });
 
 module.exports = mongoose.model("Repair", RepairSchema);

@@ -26,6 +26,7 @@ module.exports = {
             return res.status(409).json({
               message: "Error uploading!",
             });
+          file.makePublic();
         });
 
       return res.status(200).json({

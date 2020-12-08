@@ -41,6 +41,7 @@ routes.get("/requests/:repairId?", verify, repairController.getRepairById);
 routes.put("/requests/:repairId?", verify, repairController.updateStatus);
 
 routes.get("/user/requests", verify, repairController.getRepairByUser);
+routes.get("/tech/requests", verify, repairController.getRepairByTech);
 // Create user
 routes.post("/user/create", userController.createUser);
 // log in
