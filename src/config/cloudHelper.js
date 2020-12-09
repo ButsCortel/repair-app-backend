@@ -18,6 +18,7 @@ module.exports = {
       const filename = req.files.image.path;
       const options = {
         destination: req.filename,
+        predefinedAcl: "publicRead",
       };
       await storage
         .bucket(process.env.BUCKET_NAME)
@@ -26,7 +27,6 @@ module.exports = {
             return res.status(409).json({
               message: "Error uploading!",
             });
-          file.makePublic();
         });
 
       return res.status(200).json({
