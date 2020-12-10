@@ -27,12 +27,8 @@ module.exports = {
             return res.status(409).json({
               message: "Error uploading!",
             });
+          res.sendStatus(200);
         });
-
-      return res.status(200).json({
-        repair: req.repair,
-        message: "Upload successful",
-      });
 
       //Very slow upload!
       // const bucket = storage.bucket(process.env.BUCKET_NAME);

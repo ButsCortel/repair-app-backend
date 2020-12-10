@@ -32,14 +32,10 @@ const RepairSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
-    price: {
-      type: currency,
-      default: "0",
-    },
-    note: {
-      type: String,
-      default: "N/A",
-    },
+    // price: {
+    //   type: currency,
+    //   default: "0",
+    // },
     status: {
       type: String,
       enum: [

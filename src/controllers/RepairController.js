@@ -1,4 +1,5 @@
 const Repair = require("../models/Repairs");
+const History = require("../models/History");
 
 module.exports = {
   async createRepair(req, res, next) {
@@ -28,6 +29,7 @@ module.exports = {
     const { status, note } = req.body;
     const { repairId } = req.params;
     try {
+      const prevStatus = await Repair.findById(repairId).select("status -_id");
       Repair.findOneAndUpdate(
         {
           _id: repairId,
@@ -35,7 +37,6 @@ module.exports = {
         {
           $set: {
             status,
-            note,
             lastUpdate: new Date(),
             user: req.user._id,
           },
@@ -53,7 +54,14 @@ module.exports = {
             return res.status(400).json({
               message: "Request does not exist!",
             });
-          res.sendStatus(200);
+          History.create({
+            date: Date.now(),
+            user: req.user._id,
+            repair: repairId,
+            note,
+            status,
+            prevStatus: prevStatus.status,
+          }).then((history) => res.sendStatus(200));
         }
       );
     } catch (error) {
@@ -92,12 +100,21 @@ module.exports = {
     const { repairId } = req.params;
     try {
       const repair = await Repair.findById(repairId);
+      const result = await History.find({ repair: repairId });
       if (!repair)
         return res.status(400).json({
           message: "Request does not Exist!",
         });
+      let history = null;
+      if (result.length) {
+        const promises = result.map(
+          async (history) =>
+            await history.populate("user").populate("customer").execPopulate()
+        );
+        history = await Promise.all(promises);
+      }
       await repair.populate("user").populate("customer").execPopulate();
-      return res.json(repair);
+      return res.json({ repair, history });
     } catch (error) {
       console.log(error);
       return res.status(400).json({
