@@ -64,9 +64,7 @@ module.exports = {
       });
       const bucket = storage.bucket(process.env.BUCKET_NAME);
       const file = bucket.file(req.filename);
-      const deleted = await file.delete();
-      console.log(deleted);
-      res.sendStatus(200);
+      file.delete().then((response) => res.sendStatus(200));
     } catch (error) {
       console.log(error);
       res.sendStatus(500);

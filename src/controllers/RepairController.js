@@ -29,7 +29,7 @@ module.exports = {
     const { status, note } = req.body;
     const { repairId } = req.params;
     try {
-      const prevStatus = await Repair.findById(repairId).select("status -_id");
+      const repair = await Repair.findById(repairId).select("device");
       Repair.findOneAndUpdate(
         {
           _id: repairId,
@@ -54,13 +54,14 @@ module.exports = {
             return res.status(400).json({
               message: "Request does not exist!",
             });
+
           History.create({
             date: Date.now(),
             user: req.user._id,
             repair: repairId,
             note,
+            device: repair.device,
             status,
-            prevStatus: prevStatus.status,
           }).then((history) => res.sendStatus(200));
         }
       );
@@ -148,11 +149,11 @@ module.exports = {
   },
   async getRepairByTech(req, res) {
     try {
-      const result = await Repair.find({ user: req.user._id });
-      if (result.length) {
-        const promises = result.map(
-          async (repair) =>
-            await repair.populate("user").populate("customer").execPopulate()
+      const results = await History.find({ user: req.user._id });
+      if (results.length) {
+        const promises = results.map(
+          async (result) =>
+            await result.populate("user").populate("repair").execPopulate()
         );
         const repairs = await Promise.all(promises);
 

@@ -39,7 +39,7 @@ routes.get("/requests/all/:status?", verify, repairController.getRepairs);
 routes.get("/requests/:repairId?", verify, repairController.getRepairById);
 // Update Status
 routes.put("/requests/:repairId?", verify, repairController.updateStatus);
-
+// get repairs
 routes.get("/user/requests", verify, repairController.getRepairByUser);
 routes.get("/tech/requests", verify, repairController.getRepairByTech);
 // Create user

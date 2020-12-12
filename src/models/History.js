@@ -14,24 +14,15 @@ const HistorySchema = new mongoose.Schema({
     ref: "Repair",
     required: true,
   },
+  device: {
+    type: String,
+    required: true,
+  },
   note: {
     type: String,
     default: "N/A",
   },
   status: {
-    type: String,
-    enum: [
-      "INCOMING",
-      "RECEIVED",
-      "ONGOING",
-      "ON HOLD",
-      "OUTGOING",
-      "COMPLETED",
-      "CANCELLED",
-    ],
-    default: "INCOMING",
-  },
-  prevStatus: {
     type: String,
     enum: [
       "INCOMING",
