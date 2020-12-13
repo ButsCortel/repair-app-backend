@@ -1,5 +1,6 @@
 const Repair = require("../models/Repairs");
 const History = require("../models/History");
+const Users = require("../models/Users");
 
 module.exports = {
   async createRepair(req, res, next) {
@@ -28,8 +29,61 @@ module.exports = {
   async updateStatus(req, res) {
     const { status, note } = req.body;
     const { repairId } = req.params;
+    //CHECK IF TECH/ADMIN
+    if (req.user.type !== "ADMIN" || req.user.type !== "TECH")
+      return res.status(403).json({ message: "Cannot update status as user!" });
     try {
-      const repair = await Repair.findById(repairId).select("device");
+      //CHECK IF TECH IS OCCUPIED
+      if (status === "ONGOING") {
+        if (req.user.occupied) {
+          return res
+            .json({ message: "Already have ONGOING request!" })
+            .status(400);
+        }
+        Users.findByIdAndUpdate(
+          req.user._id,
+          {
+            occupied: true,
+            repair: repairId,
+          },
+          {
+            returnOriginal: false,
+          },
+          (err, doc) => {
+            if (err) {
+              console.log(err);
+              return res.status(400).json({
+                message: "Update error!",
+              });
+            } else if (!doc)
+              return res.status(404).json({
+                message: "User does not exist!",
+              });
+          }
+        );
+      } else {
+        Users.findByIdAndUpdate(
+          req.user._id,
+          {
+            occupied: false,
+            repair: null,
+          },
+          {
+            returnOriginal: false,
+          },
+          (err, doc) => {
+            if (err) {
+              console.log(err);
+              return res.status(400).json({
+                message: "Update error!",
+              });
+            } else if (!doc)
+              return res.status(404).json({
+                message: "User does not exist!",
+              });
+          }
+        );
+      }
       Repair.findOneAndUpdate(
         {
           _id: repairId,
@@ -41,9 +95,6 @@ module.exports = {
             user: req.user._id,
           },
         },
-        {
-          returnOriginal: false,
-        },
         (err, doc) => {
           if (err) {
             console.log(err);
@@ -54,13 +105,12 @@ module.exports = {
             return res.status(400).json({
               message: "Request does not exist!",
             });
-
           History.create({
             date: Date.now(),
             user: req.user._id,
             repair: repairId,
             note,
-            device: repair.device,
+            device: doc.device,
             status,
           }).then((history) => res.sendStatus(200));
         }
