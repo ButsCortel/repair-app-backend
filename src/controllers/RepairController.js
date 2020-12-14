@@ -30,8 +30,10 @@ module.exports = {
     const { status, note } = req.body;
     const { repairId } = req.params;
     //CHECK IF TECH/ADMIN
-    if (req.user.type !== "ADMIN" || req.user.type !== "TECH")
+    if (req.user.type !== "ADMIN" && req.user.type !== "TECH") {
+      console.log(req.user.type);
       return res.status(403).json({ message: "Cannot update status as user!" });
+    }
     try {
       //CHECK IF TECH IS OCCUPIED
       if (status === "ONGOING") {
