@@ -27,96 +27,79 @@ module.exports = {
     }
   },
   async updateStatus(req, res) {
-    const { status, note } = req.body;
+    const { status, note, user } = req.body;
     const { repairId } = req.params;
-    //CHECK IF TECH/ADMIN
-    if (req.user.type !== "ADMIN" && req.user.type !== "TECH") {
-      console.log(req.user.type);
-      return res.status(403).json({ message: "Cannot update status as user!" });
-    }
     try {
+      //CHECK IF TECH/ADMIN
+      if (status === "CANCELLED") {
+        if (req.user.type !== "USER" && req.user.type !== "ADMIN")
+          return res
+            .json({ message: "Only requestors can cancel their request!" })
+            .status(401);
+        Repair.findById(repairId, (err, doc) => {
+          if (err || !doc)
+            return res.json({ message: "Request does not exist!" }).status(400);
+          if (doc.customer._id !== req.user._id)
+            return res
+              .json({ message: "Only requestors can cancel their request!" })
+              .status(401);
+        });
+      }
       //CHECK IF TECH IS OCCUPIED
       if (status === "ONGOING") {
-        if (req.user.occupied) {
-          return res
-            .json({ message: "Already have ONGOING request!" })
-            .status(400);
-        }
-        Users.findByIdAndUpdate(
-          req.user._id,
-          {
-            occupied: true,
-            repair: repairId,
-          },
-          {
-            returnOriginal: false,
-          },
-          (err, doc) => {
-            if (err) {
-              console.log(err);
-              return res.status(400).json({
-                message: "Update error!",
-              });
-            } else if (!doc)
-              return res.status(404).json({
-                message: "User does not exist!",
-              });
-          }
-        );
-      } else {
-        Users.findByIdAndUpdate(
-          req.user._id,
-          {
-            occupied: false,
-            repair: null,
-          },
-          {
-            returnOriginal: false,
-          },
-          (err, doc) => {
-            if (err) {
-              console.log(err);
-              return res.status(400).json({
-                message: "Update error!",
-              });
-            } else if (!doc)
-              return res.status(404).json({
-                message: "User does not exist!",
-              });
-          }
-        );
+        if (user.occupied)
+          return res.status(400).json({ message: "Already occupied!" });
       }
-      Repair.findOneAndUpdate(
+      const updatedUser = await Users.findByIdAndUpdate(
+        req.user._id,
         {
-          _id: repairId,
+          occupied: status === "ONGOING" ? true : false,
+          repair: status === "ONGOING" ? repairId : null,
         },
-        {
-          $set: {
-            status,
-            lastUpdate: new Date(),
-            user: req.user._id,
-          },
-        },
-        (err, doc) => {
+        { returnOriginal: false },
+        (err, userDoc) => {
           if (err) {
             console.log(err);
-            return res.status(400).json({
-              message: "Update error!",
-            });
-          } else if (!doc)
-            return res.status(400).json({
-              message: "Request does not exist!",
-            });
-          History.create({
-            date: Date.now(),
-            user: req.user._id,
-            repair: repairId,
-            note,
-            device: doc.device,
-            status,
-          }).then((history) => res.sendStatus(200));
+            return res.status(400).json({ message: "error updating status!" });
+          }
+          if (!userDoc) {
+            return res.status(400).json({ message: "User does not exist!" });
+          }
+          Repair.findByIdAndUpdate(
+            repairId,
+            {
+              status,
+              user: req.user._id,
+              lastUpdate: Date.now(),
+            },
+            (err, repairDoc) => {
+              if (err) {
+                console.log(err);
+                return res
+                  .status(400)
+                  .json({ message: "error updating status!" });
+              }
+              if (!userDoc) {
+                return res
+                  .status(400)
+                  .json({ message: "Request does not exist!" });
+              }
+              History.create({
+                date: Date.now(),
+                user: req.user._id,
+                repair: repairId,
+                device: repairDoc.device,
+                note,
+                status,
+              });
+            }
+          );
         }
       );
+      updatedUser
+        .populate("repair")
+        .execPopulate()
+        .then((data) => res.json({ user: data }));
     } catch (error) {
       console.log(error);
       return res.status(500).json({

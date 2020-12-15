@@ -14,17 +14,21 @@ module.exports = {
       const user = await User.findOne({
         email,
       }).select("+password");
+      await user.populate("repair").execPopulate();
       if (!user) {
         return res.status(401).json({
           message: "Email or Password does not match!",
         });
       } else if (user && (await bcrypt.compare(password, user.password))) {
+        console.log(user);
         const userResponse = {
           _id: user._id,
           email: user.email,
           firstName: user.firstName,
           lastName: user.lastName,
           type: user.type,
+          occupied: user.occupied,
+          repair: user.repair,
         };
         return jwt.sign(
           { user: userResponse },
