@@ -128,21 +128,14 @@ module.exports = {
     const { repId } = req.params;
 
     try {
-      await Repair.findOneAndDelete(
-        {
-          _id: repId,
-        },
-        async (err, request) => {
-          if (err || !request)
-            return res.status(400).json({
-              message: "Request does not exist!",
-            });
-          req.filename = request.image;
-          next();
-        }
-      );
-
-      // next();
+      Repair.findByIdAndDelete(repId, (err, doc) => {
+        if (err)
+          return res.status(400).json({
+            message: "Request does not exist!",
+          });
+        req.filename = doc.image;
+        next();
+      });
     } catch (err) {
       return res.status(400).json({
         message: "Request does not exist!",
