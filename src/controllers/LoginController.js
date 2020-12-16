@@ -20,7 +20,6 @@ module.exports = {
           message: "Email or Password does not match!",
         });
       } else if (user && (await bcrypt.compare(password, user.password))) {
-        console.log(user);
         const userResponse = {
           _id: user._id,
           email: user.email,

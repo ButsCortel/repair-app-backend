@@ -21,34 +21,64 @@ module.exports = {
       next();
     } catch (error) {
       console.log(error);
-      return res.status(400).json({
-        message: "Missing required information!",
-      });
+      return res.status(400).json("Missing required information!");
     }
   },
   async updateStatus(req, res) {
-    const { status, note, user } = req.body;
+    const { prevStatus, status, note, user } = req.body;
     const { repairId } = req.params;
+    if (status === prevStatus) {
+      return res.status(400).json("Cannot update with same status!");
+    }
+    try {
+      switch (status) {
+        case "RECEIVED":
+          if (prevStatus !== "INCOMING") throw "Cannot update to RECEIVED";
+          break;
+        case "ONGOING":
+          if (prevStatus !== "RECEIVED" && prevStatus !== "ON HOLD")
+            throw "Cannot update to ONGOING";
+          break;
+        case "ON HOLD":
+          if (prevStatus !== "ONGOING") throw "Cannot update to ON HOLD";
+          break;
+        case "OUTGOING":
+          if (
+            prevStatus !== "ONGOING" &&
+            prevStatus !== "ON HOLD" &&
+            prevStatus !== "CANCELLED"
+          )
+            throw "Cannot update to OUTGOING";
+          break;
+        case "COMPLETED":
+          if (prevStatus !== "OUTGOING") throw "Cannot update to COMPLETED";
+          break;
+        default:
+          if (prevStatus === "OUTGOING" || prevStatus === "COMPLETED")
+            throw `Cannot cancel ${prevStatus} request`;
+
+          break;
+      }
+    } catch (error) {
+      return res.status(400).json(error);
+    }
+
     try {
       //CHECK IF TECH/ADMIN
-      if (status === "CANCELLED") {
-        if (req.user.type !== "USER" && req.user.type !== "ADMIN")
-          return res
-            .json({ message: "Only requestors can cancel their request!" })
-            .status(401);
+      if (req.user.type !== "ADMIN" && status === "CANCELLED") {
         Repair.findById(repairId, (err, doc) => {
           if (err || !doc)
-            return res.json({ message: "Request does not exist!" }).status(400);
-          if (doc.customer._id !== req.user._id)
+            return res.status(400).json("Request does not exist!");
+          if (doc.customer._id.toString() !== req.user._id.toString()) {
             return res
-              .json({ message: "Only requestors can cancel their request!" })
-              .status(401);
+              .status(401)
+              .json("Only requestors can cancel their request!");
+          }
         });
       }
       //CHECK IF TECH IS OCCUPIED
       if (status === "ONGOING") {
-        if (user.occupied)
-          return res.status(400).json({ message: "Already occupied!" });
+        if (user.occupied) return res.status(400).json("Already occupied!");
       }
       const updatedUser = await Users.findByIdAndUpdate(
         req.user._id,
@@ -60,10 +90,10 @@ module.exports = {
         (err, userDoc) => {
           if (err) {
             console.log(err);
-            return res.status(400).json({ message: "error updating status!" });
+            return res.status(400).json("error updating status!");
           }
           if (!userDoc) {
-            return res.status(400).json({ message: "User does not exist!" });
+            return res.status(400).json("User does not exist!");
           }
           Repair.findByIdAndUpdate(
             repairId,
@@ -75,14 +105,10 @@ module.exports = {
             (err, repairDoc) => {
               if (err) {
                 console.log(err);
-                return res
-                  .status(400)
-                  .json({ message: "error updating status!" });
+                return res.status(400).json("error updating status!");
               }
               if (!userDoc) {
-                return res
-                  .status(400)
-                  .json({ message: "Request does not exist!" });
+                return res.status(400).json("Request does not exist!");
               }
               History.create({
                 date: Date.now(),
@@ -102,9 +128,7 @@ module.exports = {
         .then((data) => res.json({ user: data }));
     } catch (error) {
       console.log(error);
-      return res.status(500).json({
-        message: "Server error!",
-      });
+      return res.status(500).json("Server error!");
     }
   },
   async deleteRepair(req, res, next) {
@@ -112,17 +136,12 @@ module.exports = {
 
     try {
       Repair.findByIdAndDelete(repId, (err, doc) => {
-        if (err)
-          return res.status(400).json({
-            message: "Request does not exist!",
-          });
+        if (err) return res.status(400).json("Request does not exist!");
         req.filename = doc.image;
         next();
       });
     } catch (err) {
-      return res.status(400).json({
-        message: "Request does not exist!",
-      });
+      return res.status(400).json("Request does not exist!");
     }
   },
   async getRepairById(req, res) {
@@ -130,10 +149,7 @@ module.exports = {
     try {
       const repair = await Repair.findById(repairId);
       const result = await History.find({ repair: repairId });
-      if (!repair)
-        return res.status(400).json({
-          message: "Request does not Exist!",
-        });
+      if (!repair) return res.status(400).json("Request does not Exist!");
       let history = null;
       if (result.length) {
         const promises = result.map(
@@ -146,9 +162,7 @@ module.exports = {
       return res.json({ repair, history });
     } catch (error) {
       console.log(error);
-      return res.status(400).json({
-        message: "Request does not Exist!",
-      });
+      return res.status(400).json("Request does not Exist!");
     }
   },
   async getRepairByUser(req, res) {
@@ -161,18 +175,12 @@ module.exports = {
         );
         const repairs = await Promise.all(promises);
 
-        return res.json({
-          repairs,
-        });
+        return res.json(repairs);
       }
-      return res.status(400).json({
-        message: "There are no available requests yet.",
-      });
+      return res.status(400).json("There are no available requests yet.");
     } catch (error) {
       console.log(error);
-      return res.status(400).json({
-        message: "There are no available requests yet.",
-      });
+      return res.status(400).json("There are no available requests yet.");
     }
   },
   async getRepairByTech(req, res) {
@@ -189,14 +197,10 @@ module.exports = {
           repairs,
         });
       }
-      return res.status(400).json({
-        message: "There are no available requests yet.",
-      });
+      return res.status(400).json("There are no available requests yet.");
     } catch (error) {
       console.log(error);
-      return res.status(400).json({
-        message: "There are no available requests yet.",
-      });
+      return res.status(400).json("There are no available requests yet.");
     }
   },
   async getRepairs(req, res) {
@@ -216,18 +220,12 @@ module.exports = {
         );
         const repairs = await Promise.all(promises);
 
-        return res.json({
-          repairs,
-        });
+        return res.json(repairs);
       }
-      return res.status(400).json({
-        message: "There are no available requests yet.",
-      });
+      return res.status(400).json("There are no available requests yet.");
     } catch (error) {
       console.log(error);
-      return res.status(400).json({
-        message: "There are no available requests yet.",
-      });
+      return res.status(400).json("There are no available requests yet.");
     }
   },
 };
