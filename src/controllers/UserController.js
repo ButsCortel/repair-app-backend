@@ -22,13 +22,25 @@ module.exports = {
         }
 
         const hashedPass = await bcrypt.hash(password, 10);
-        const newUser = await User.create({
-          firstName,
-          lastName,
-          password: hashedPass,
-          email,
-          type,
-        });
+        const userObj =
+          type === "USER"
+            ? {
+                firstName,
+                lastName,
+                password: hashedPass,
+                email,
+                type,
+              }
+            : {
+                firstName,
+                lastName,
+                password: hashedPass,
+                email,
+                type,
+                occupied: false,
+                repair: null,
+              };
+        const newUser = await User.create(userObj);
         return res.json(newUser);
       }
       return res.status(409).json({

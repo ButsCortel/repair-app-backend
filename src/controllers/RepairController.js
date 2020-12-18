@@ -80,12 +80,21 @@ module.exports = {
       if (status === "ONGOING") {
         if (user.occupied) return res.status(400).json("Already occupied!");
       }
+      const updateObj =
+        status === "ONGOING"
+          ? {
+              occupied: true,
+              repair: repairId,
+            }
+          : prevStatus === "ONGOING"
+          ? {
+              occupied: false,
+              repair: null,
+            }
+          : {};
       const updatedUser = await Users.findByIdAndUpdate(
         req.user._id,
-        {
-          occupied: status === "ONGOING" ? true : false,
-          repair: status === "ONGOING" ? repairId : null,
-        },
+        updateObj,
         { returnOriginal: false },
         (err, userDoc) => {
           if (err) {

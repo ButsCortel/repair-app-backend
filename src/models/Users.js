@@ -25,13 +25,10 @@ const UserSchema = new mongoose.Schema({
   },
   occupied: {
     type: Boolean,
-    default: false,
-    required: true,
   },
   repair: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Repair",
-    default: null,
   },
 });
 
