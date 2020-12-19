@@ -1,4 +1,4 @@
-const User = require("../models/Users");
+const User = require("../models/User");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 
@@ -26,8 +26,6 @@ module.exports = {
           firstName: user.firstName,
           lastName: user.lastName,
           type: user.type,
-          occupied: user.occupied,
-          repair: user.repair,
         };
         return jwt.sign(
           { user: userResponse },

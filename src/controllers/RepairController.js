@@ -1,6 +1,6 @@
-const Repair = require("../models/Repairs");
+const Repair = require("../models/Repair");
 const History = require("../models/History");
-const Users = require("../models/Users");
+const User = require("../models/User");
 
 module.exports = {
   async createRepair(req, res, next) {
@@ -16,7 +16,7 @@ module.exports = {
         image: req.filename,
         dateCreated: new Date(),
         lastUpdate: new Date(),
-      });
+      }).exec();
       req.repair = repair;
       next();
     } catch (error) {
@@ -25,19 +25,28 @@ module.exports = {
     }
   },
   async updateStatus(req, res) {
-    const { prevStatus, status, note, user } = req.body;
+    const { prevStatus, status, note } = req.body;
     const { repairId } = req.params;
+    const repair = await Repair.findById(repairId).exec();
+    if (!repair) return res.status(404).json("Request does not exist!");
     if (status === prevStatus) {
       return res.status(400).json("Cannot update with same status!");
     }
     try {
       switch (status) {
+        case prevStatus:
+          return res.status(400).json("Cannot update with same status!");
         case "RECEIVED":
           if (prevStatus !== "INCOMING") throw "Cannot update to RECEIVED";
           break;
         case "ONGOING":
           if (prevStatus !== "RECEIVED" && prevStatus !== "ON HOLD")
             throw "Cannot update to ONGOING";
+          const occupied = await Repair.findOne({
+            status,
+            user: req.user._id,
+          }).exec();
+          if (occupied) throw "Already have ongoing request!";
           break;
         case "ON HOLD":
           if (prevStatus !== "ONGOING") throw "Cannot update to ON HOLD";
@@ -53,91 +62,34 @@ module.exports = {
         case "COMPLETED":
           if (prevStatus !== "OUTGOING") throw "Cannot update to COMPLETED";
           break;
+        case "CANCELLED":
+          if (repair.customer.toString() !== req.user._id.toString())
+            throw "Cannot cancel other's request";
+          break;
         default:
           if (prevStatus === "OUTGOING" || prevStatus === "COMPLETED")
             throw `Cannot cancel ${prevStatus} request`;
-
           break;
       }
-    } catch (error) {
-      return res.status(400).json(error);
-    }
-
-    try {
-      //CHECK IF TECH/ADMIN
-      if (req.user.type !== "ADMIN" && status === "CANCELLED") {
-        Repair.findById(repairId, (err, doc) => {
-          if (err || !doc)
-            return res.status(400).json("Request does not exist!");
-          if (doc.customer._id.toString() !== req.user._id.toString()) {
-            return res
-              .status(401)
-              .json("Only requestors can cancel their request!");
-          }
-        });
+      if (req.user.type === "USER" && status !== "CANCELLED") {
+        throw "Only Technicians can update repairs";
       }
-      //CHECK IF TECH IS OCCUPIED
-      if (status === "ONGOING") {
-        if (user.occupied) return res.status(400).json("Already occupied!");
-      }
-      const updateObj =
-        status === "ONGOING"
-          ? {
-              occupied: true,
-              repair: repairId,
-            }
-          : prevStatus === "ONGOING"
-          ? {
-              occupied: false,
-              repair: null,
-            }
-          : {};
-      const updatedUser = await Users.findByIdAndUpdate(
-        req.user._id,
-        updateObj,
-        { returnOriginal: false },
-        (err, userDoc) => {
-          if (err) {
-            console.log(err);
-            return res.status(400).json("error updating status!");
-          }
-          if (!userDoc) {
-            return res.status(400).json("User does not exist!");
-          }
-          Repair.findByIdAndUpdate(
-            repairId,
-            {
-              status,
-              user: req.user._id,
-              lastUpdate: Date.now(),
-            },
-            (err, repairDoc) => {
-              if (err) {
-                console.log(err);
-                return res.status(400).json("error updating status!");
-              }
-              if (!userDoc) {
-                return res.status(400).json("Request does not exist!");
-              }
-              History.create({
-                date: Date.now(),
-                user: req.user._id,
-                repair: repairId,
-                device: repairDoc.device,
-                note,
-                status,
-              });
-            }
-          );
-        }
-      );
-      updatedUser
-        .populate("repair")
-        .execPopulate()
-        .then((data) => res.json({ user: data }));
+      repair.lastUpdate = Date.now();
+      repair.user = req.user._id;
+      repair.status = status;
+      repair.save();
+      await History.create({
+        date: Date.now(),
+        user: req.user._id,
+        repair: repairId,
+        device: repair.device,
+        note,
+        status,
+      });
+      res.sendStatus(200);
     } catch (error) {
       console.log(error);
-      return res.status(500).json("Server error!");
+      return res.status(400).json(error);
     }
   },
   async deleteRepair(req, res, next) {
@@ -192,24 +144,34 @@ module.exports = {
       return res.status(400).json("There are no available requests yet.");
     }
   },
+  async getOngoing(req, res) {
+    try {
+      const repair = await Repair.findOne({
+        user: req.user._id,
+        status: "ONGOING",
+      });
+      res.json(repair);
+    } catch (error) {
+      console.log(error);
+      res.status(500).json("Error fetching Ongoing request!");
+    }
+  },
   async getRepairByTech(req, res) {
     try {
       const results = await History.find({ user: req.user._id });
-      if (results.length) {
-        const promises = results.map(
-          async (result) =>
-            await result.populate("user").populate("repair").execPopulate()
-        );
-        const repairs = await Promise.all(promises);
 
-        return res.json({
-          repairs,
-        });
+      if (!results.length) {
+        return res.status(404).json("There are no available requests yet.");
       }
-      return res.status(400).json("There are no available requests yet.");
+      const promises = results.map(
+        async (result) =>
+          await result.populate("user").populate("repair").execPopulate()
+      );
+      const history = await Promise.all(promises);
+      res.json(history);
     } catch (error) {
       console.log(error);
-      return res.status(400).json("There are no available requests yet.");
+      return res.status(500).json("Error getting history!");
     }
   },
   async getRepairs(req, res) {
