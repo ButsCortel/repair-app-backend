@@ -10,6 +10,12 @@ const RepairSchema = new mongoose.Schema(
     lastUpdate: {
       type: Date,
     },
+    totalTime: {
+      type: Number,
+    },
+    totalOngoing: {
+      type: Number,
+    },
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

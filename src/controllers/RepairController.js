@@ -6,23 +6,30 @@ module.exports = {
   async createRepair(req, res, next) {
     const { device, issue, expedite } = req.fields;
     const { _id } = req.user;
-    try {
-      const repair = await Repair.create({
+    if (!device || !issue || !expedite)
+      return res.status(400).json("Missing required information!");
+
+    const repair = await Repair.create(
+      {
         user: _id,
         customer: _id,
         device,
         issue,
+        totalOngoing: 0,
         expedite: expedite === "Yes" ? true : false,
         image: req.filename,
         dateCreated: new Date(),
         lastUpdate: new Date(),
-      }).exec();
-      req.repair = repair;
-      next();
-    } catch (error) {
-      console.log(error);
-      return res.status(400).json("Missing required information!");
-    }
+      },
+      (err, doc) => {
+        if (err || !doc) {
+          console.log(error);
+          return res.status(500).json("Cannot create request! Server error.");
+        }
+        req.repair = repair;
+        next();
+      }
+    );
   },
   async updateStatus(req, res) {
     const { prevStatus, status, note } = req.body;
@@ -73,6 +80,9 @@ module.exports = {
       }
       if (req.user.type === "USER" && status !== "CANCELLED") {
         throw "Only Technicians can update repairs";
+      }
+      if (prevStatus === "ONGOING") {
+        repair.totalOngoing += Date.now() - Date.parse(repair.lastUpdate);
       }
       repair.lastUpdate = Date.now();
       repair.user = req.user._id;
