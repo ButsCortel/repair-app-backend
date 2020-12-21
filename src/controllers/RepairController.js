@@ -68,6 +68,7 @@ module.exports = {
           break;
         case "COMPLETED":
           if (prevStatus !== "OUTGOING") throw "Cannot update to COMPLETED";
+          repair.totalTime = Date.now() - Date.parse(repair.dateCreated);
           break;
         case "CANCELLED":
           if (repair.customer.toString() !== req.user._id.toString())
