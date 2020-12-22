@@ -190,11 +190,14 @@ module.exports = {
     const query =
       status === undefined
         ? {}
+        : status === "CANSTART"
+        ? { $or: [{ status: "RECEIVED" }, { status: "ON HOLD" }] }
         : {
             status,
           };
     try {
-      const result = await Repair.find(query);
+      const result = await Repair.find(query).exec();
+
       if (result.length) {
         const promises = result.map(
           async (repair) =>
