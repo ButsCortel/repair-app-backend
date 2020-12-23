@@ -71,6 +71,8 @@ module.exports = {
           repair.totalTime = Date.now() - Date.parse(repair.dateCreated);
           break;
         case "CANCELLED":
+          if (prevStatus !== "INCOMING")
+            throw `Cannot cancel ${prevStatus} request! Contact your technician!`;
           if (repair.customer.toString() !== req.user._id.toString())
             throw "Cannot cancel other's request";
           break;
