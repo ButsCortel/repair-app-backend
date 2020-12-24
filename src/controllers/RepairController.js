@@ -1,6 +1,5 @@
 const Repair = require("../models/Repair");
 const History = require("../models/History");
-const User = require("../models/User");
 
 module.exports = {
   async createRepair(req, res, next) {
@@ -23,7 +22,6 @@ module.exports = {
       },
       (err, doc) => {
         if (err || !doc) {
-          console.log(error);
           return res.status(500).json("Cannot create request! Server error.");
         }
         req.repair = repair;
@@ -101,7 +99,6 @@ module.exports = {
       });
       res.sendStatus(200);
     } catch (error) {
-      console.log(error);
       return res.status(400).json(error);
     }
   },
@@ -135,7 +132,6 @@ module.exports = {
       await repair.populate("user").populate("customer").execPopulate();
       return res.json({ repair, history });
     } catch (error) {
-      console.log(error);
       return res.status(400).json("Request does not Exist!");
     }
   },
@@ -153,7 +149,6 @@ module.exports = {
       }
       return res.status(400).json("There are no available requests yet.");
     } catch (error) {
-      console.log(error);
       return res.status(400).json("There are no available requests yet.");
     }
   },
@@ -165,7 +160,6 @@ module.exports = {
       });
       res.json(repair);
     } catch (error) {
-      console.log(error);
       res.status(500).json("Error fetching Ongoing request!");
     }
   },
@@ -183,7 +177,6 @@ module.exports = {
       const history = await Promise.all(promises);
       res.json(history);
     } catch (error) {
-      console.log(error);
       return res.status(500).json("Error getting history!");
     }
   },
@@ -211,7 +204,6 @@ module.exports = {
       }
       return res.status(400).json("There are no available requests yet.");
     } catch (error) {
-      console.log(error);
       return res.status(400).json("There are no available requests yet.");
     }
   },
