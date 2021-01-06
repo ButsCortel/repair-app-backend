@@ -1,5 +1,4 @@
 const jwt = require("jsonwebtoken");
-const User = require("../models/User");
 
 const verify = async (req, res, next) => {
   const token = req.header("auth-token");
@@ -9,8 +8,8 @@ const verify = async (req, res, next) => {
     });
   try {
     const verified = jwt.verify(token, process.env.SECRET);
-    const user = await User.findById(verified.user._id);
-    if (!user)
+
+    if (!verified)
       return res.status(401).json({
         message: "Unauthorized!",
       });
